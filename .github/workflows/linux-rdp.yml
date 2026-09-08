@@ -1,0 +1,49 @@
+name: linux cloud rdp
+
+on: 
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: 1. Install Desktop Environment & xrdp
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y xfce4 xfce4-goodies xrdp
+          sudo systemctl enable xrdp
+          sudo systemctl start xrdp
+          # تنظیم پورت RDP (پیش‌فرض 3389)
+          sudo ufw allow 3389/tcp || true
+          # ساخت کاربر جدید
+          sudo useradd -m -s /bin/bash linuxadmin
+          echo "linuxadmin:sajad" | sudo chpasswd
+          sudo usermod -aG sudo linuxadmin
+      
+      - name: 2. Install & Connect Tailscale VPN
+        env:
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+        run: |
+          # نصب Tailscale
+          curl -fsSL https://tailscale.com/install.sh | sh
+          # اتصال به شبکه Tailscale
+          sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-linux-rdp"
+          sleep 8
+          # دریافت IP تیل‌اسکیل
+          TS_IP=$(tailscale ip -4)
+          echo ""
+          echo "================================================"
+          echo " >>> LINUX RDP SERVER IS READY! <<<"
+          echo " Tailscale IP : $TS_IP"
+          echo " Username     : linuxadmin"
+          echo " Password     : Cynet@2026"
+          echo " >> Connect with Remote Desktop (xrdp) to: $TS_IP"
+          echo "================================================"
+      
+      - name: 3. Keep Server Alive (6 Hours)
+        run: |
+          for ((i=1; i<=360; i++)); do
+            sleep 60
+            echo "[$i/360] Server running..."
+          done
