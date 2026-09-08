@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04   # نسخه دلخواه
     timeout-minutes: 360
     steps:
       - name: 1. Install Desktop Environment & xrdp
@@ -14,23 +14,18 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt install -y xfce4 xfce4-goodies xrdp
           sudo systemctl enable xrdp
           sudo systemctl start xrdp
-          # تنظیم پورت RDP (پیش‌فرض 3389)
           sudo ufw allow 3389/tcp || true
-          # ساخت کاربر جدید
           sudo useradd -m -s /bin/bash linuxadmin
-          echo "linuxadmin:sajad" | sudo chpasswd
+          echo "linuxadmin:Cynet@2026" | sudo chpasswd
           sudo usermod -aG sudo linuxadmin
       
       - name: 2. Install & Connect Tailscale VPN
         env:
           TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
         run: |
-          # نصب Tailscale
           curl -fsSL https://tailscale.com/install.sh | sh
-          # اتصال به شبکه Tailscale
           sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-linux-rdp"
           sleep 8
-          # دریافت IP تیل‌اسکیل
           TS_IP=$(tailscale ip -4)
           echo ""
           echo "================================================"
